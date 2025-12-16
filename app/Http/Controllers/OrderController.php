@@ -11,12 +11,13 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    // Halaman Checkout (Form alamat & pembayaran)
+    // 1. Tampilkan Halaman Checkout
     public function checkoutPage()
     {
         $cartItems = Cart::where('user_id', Auth::id())->with('product')->get();
+
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Keranjang kosong');
+            return redirect()->route('products')->with('error', 'Keranjang Anda kosong.');
         }
 
         $total = $cartItems->sum(function($item) {
@@ -26,54 +27,61 @@ class OrderController extends Controller
         return view('orders.checkout', compact('cartItems', 'total'));
     }
 
-
+    // 2. PROSES CHECKOUT (Ini yang kemarin belum ada isinya)
     public function processCheckout(Request $request)
     {
+        // Validasi Input
         $request->validate([
-            'shipping_address' => 'required|string',
-            'payment_method' => 'required|string',
+            'shipping_address' => 'required|string|max:500',
+            'payment_method' => 'required|in:transfer_bank,cod,e-wallet',
         ]);
 
+        // Gunakan Transaction agar data aman (semua tersimpan atau tidak sama sekali)
         DB::transaction(function () use ($request) {
             $user = Auth::user();
-            $cartItems = Cart::where('user_id', $user->id)->get();
 
-            // Hitung ulang total untuk keamanan
-            $total = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+            // Ambil data keranjang user
+            $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
 
-            // 1. Buat Order
+            // Hitung Total Ulang (untuk keamanan, jangan ambil dari request frontend)
+            $totalPrice = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+
+            // A. Buat Record Order Baru
             $order = Order::create([
                 'user_id' => $user->id,
+                'status' => 'pending', // Default status
                 'shipping_address' => $request->shipping_address,
                 'payment_method' => $request->payment_method,
-                'total_price' => $total,
-                'status' => 'pending'
+                'total_price' => $totalPrice,
             ]);
 
-            // 2. Pindahkan item dari Cart ke OrderItems
+            // B. Pindahkan Item Keranjang ke OrderItems
             foreach ($cartItems as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
-                    'price' => $item->product->price, // Simpan harga saat ini
+                    'price' => $item->product->price, // Harga saat transaksi terjadi
                 ]);
             }
 
-            // 3. Kosongkan Keranjang
+            // C. Hapus Semua Isi Keranjang User Ini
             Cart::where('user_id', $user->id)->delete();
         });
 
-        return redirect()->route('orders.history')->with('success', 'Pembelian berhasil!');
+        // Redirect ke Halaman History dengan pesan sukses
+        return redirect()->route('orders.history')->with('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
     }
 
-    // Daftar Pembelian
+    // 3. Tampilkan Riwayat Pesanan
     public function history()
     {
+        // Ambil order milik user yang sedang login, urutkan dari yang terbaru
         $orders = Order::where('user_id', Auth::id())
-                        ->with('items.product')
-                        ->orderByDesc('created_at')
+                        ->with('items.product') // Load relasi items dan product
+                        ->latest()
                         ->get();
+
         return view('orders.history', compact('orders'));
     }
 }
