@@ -10,7 +10,21 @@
         <div class="card-body">
             <h3 class="card-title">{{ $product['name'] }}</h3>
             <p class="card-text">{{ $product['description'] }}</p>
-            <h4 class="text-primary">Rp {{ number_format($product['price'], 0, ',', '.') }}</h4>
+            <h4 class="text-primary mb-3">Rp {{ number_format($product['price'], 0, ',', '.') }}</h4>
+
+            {{-- TOMBOL ADD TO CART --}}
+            @auth
+                <form action="{{ route('cart.add', $product['id']) }}" method="POST" class="d-inline mb-3">
+                    @csrf
+                    <button type="submit" class="btn btn-success btn-lg mb-3">
+                        + Keranjang Belanja
+                    </button>
+                </form>
+                <br>
+            @else
+                <a href="{{ route('login') }}" class="btn btn-outline-primary mb-3">Login untuk Membeli</a>
+                <br>
+            @endauth
 
             <hr>
             <a href="{{ route('products') }}" class="btn btn-secondary">Kembali ke List</a>
