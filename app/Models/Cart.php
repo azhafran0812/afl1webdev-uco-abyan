@@ -9,7 +9,7 @@ class Cart extends Model
 {
     use HasFactory;
 
-    // Tambahkan ini agar kolom bisa diisi
+
     protected $fillable = [
         'user_id',
         'product_id',

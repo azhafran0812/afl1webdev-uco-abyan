@@ -26,7 +26,7 @@ class OrderController extends Controller
         return view('orders.checkout', compact('cartItems', 'total'));
     }
 
-    // Proses Checkout (10 Poin)
+
     public function processCheckout(Request $request)
     {
         $request->validate([
@@ -67,7 +67,7 @@ class OrderController extends Controller
         return redirect()->route('orders.history')->with('success', 'Pembelian berhasil!');
     }
 
-    // Daftar Pembelian (10 Poin)
+    // Daftar Pembelian
     public function history()
     {
         $orders = Order::where('user_id', Auth::id())

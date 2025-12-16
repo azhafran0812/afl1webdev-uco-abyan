@@ -22,7 +22,7 @@ class CartController extends Controller
         return view('cart.index', compact('cartItems', 'total'));
     }
 
-    // Tambah ke Keranjang (10 Poin)
+    // Tambah ke Keranjang
     public function addToCart(Request $request, $productId)
     {
         $cart = Cart::where('user_id', Auth::id())
@@ -42,7 +42,7 @@ class CartController extends Controller
         return redirect()->back()->with('success', 'Produk ditambahkan ke keranjang');
     }
 
-    // Ubah Jumlah (10 Poin)
+    // Ubah Jumlah
     public function updateCart(Request $request, $cartId)
     {
         $request->validate(['quantity' => 'required|integer|min:1']);
@@ -55,7 +55,7 @@ class CartController extends Controller
         return redirect()->back();
     }
 
-    // Hapus dari Keranjang (10 Poin)
+    // Hapus dari Keranjang
     public function removeFromCart($cartId)
     {
         Cart::where('user_id', Auth::id())->where('id', $cartId)->delete();
