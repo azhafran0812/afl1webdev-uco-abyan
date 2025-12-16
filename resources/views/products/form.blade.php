@@ -19,28 +19,39 @@
         <form action="{{ isset($product) ? route('products.update', $product->id) : route('products.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
+            {{-- Catatan: Untuk route update kita tetap pakai POST di form HTML,
+                 karena di web.php route update didefinisikan sebagai POST. --}}
+
             <div class="space-y-6">
 
+                {{-- Dropdown Kategori Dinamis --}}
                 <div>
                     <label for="category_id" class="block text-sm font-bold text-gray-700 mb-1">
                         Kategori Produk <span class="text-red-500">*</span>
                     </label>
                     <select id="category_id" name="category_id"
                             class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm py-2.5 px-3 bg-gray-50 focus:bg-white transition">
+
                         <option value="" disabled {{ !isset($product) ? 'selected' : '' }}>-- Pilih Kategori --</option>
 
                         @php
-                            $currentCat = isset($product) ? $product->category_id : old('category_id');
+                            // Ambil nilai lama (jika error validasi) atau nilai dari database (jika edit)
+                            $currentCat = old('category_id', isset($product) ? $product->category_id : '');
                         @endphp
-                        <option value="1" {{ $currentCat == 1 ? 'selected' : '' }}>Elektronik</option>
-                        <option value="2" {{ $currentCat == 2 ? 'selected' : '' }}>Pakaian</option>
-                        <option value="3" {{ $currentCat == 3 ? 'selected' : '' }}>Makanan</option>
+
+                        @foreach($categories as $category)
+                            <option value="{{ $category->id }}" {{ $currentCat == $category->id ? 'selected' : '' }}>
+                                {{ $category->name }}
+                            </option>
+                        @endforeach
+
                     </select>
                     @error('category_id')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
+                {{-- Input Nama --}}
                 <div>
                     <label for="name" class="block text-sm font-bold text-gray-700 mb-1">
                         Nama Produk <span class="text-red-500">*</span>
@@ -48,12 +59,13 @@
                     <input type="text" name="name" id="name"
                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm py-2.5 px-3 placeholder-gray-400"
                            placeholder="Contoh: Sepatu Sneakers Putih"
-                           value="{{ isset($product) ? $product->name : old('name') }}" required>
+                           value="{{ old('name', isset($product) ? $product->name : '') }}" required>
                     @error('name')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
+                {{-- Input Harga --}}
                 <div>
                     <label for="price" class="block text-sm font-bold text-gray-700 mb-1">
                         Harga (Rp) <span class="text-red-500">*</span>
@@ -65,20 +77,21 @@
                         <input type="number" name="price" id="price"
                                class="block w-full rounded-lg border-gray-300 pl-10 focus:border-black focus:ring-black sm:text-sm py-2.5"
                                placeholder="0"
-                               value="{{ isset($product) ? $product->price : old('price') }}" required>
+                               value="{{ old('price', isset($product) ? $product->price : '') }}" required>
                     </div>
                     @error('price')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
+                {{-- Input Deskripsi --}}
                 <div>
                     <label for="description" class="block text-sm font-bold text-gray-700 mb-1">
                         Deskripsi <span class="text-red-500">*</span>
                     </label>
                     <textarea id="description" name="description" rows="4"
                               class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-black focus:ring-black sm:text-sm py-2 px-3 placeholder-gray-400"
-                              placeholder="Jelaskan detail produk Anda..." required>{{ isset($product) ? $product->description : old('description') }}</textarea>
+                              placeholder="Jelaskan detail produk Anda..." required>{{ old('description', isset($product) ? $product->description : '') }}</textarea>
                     @error('description')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror

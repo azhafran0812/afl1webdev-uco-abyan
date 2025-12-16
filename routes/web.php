@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CategoryController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -27,5 +28,10 @@ Route::prefix('products')->controller(ProductController::class)->group(function 
     // 6. Route update (/products/update/{id}) - Method POST dengan parameter id
     // Catatan: Tugas meminta Method POST, meski biasanya Laravel menggunakan PUT/PATCH
     Route::post('/update/{id}', 'update')->name('products.update');
+
+    Route::prefix('categories')->controller(CategoryController::class)->group(function () {
+    Route::get('/create', 'create')->name('categories.create'); // Halaman form
+    Route::post('/store', 'store')->name('categories.store');   // Proses simpan
+    });
 
 });
