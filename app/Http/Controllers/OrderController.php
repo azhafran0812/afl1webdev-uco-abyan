@@ -8,18 +8,26 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
+use App\Mail\OrderPlaced;
 
 class OrderController extends Controller
 {
-    // 1. Tampilkan Halaman Checkout
+    /**
+     * 1. Tampilkan Halaman Checkout
+     */
     public function checkoutPage()
     {
+        // Ambil keranjang milik user yang login
         $cartItems = Cart::where('user_id', Auth::id())->with('product')->get();
 
+        // Jika kosong, tendang balik ke halaman produk
         if ($cartItems->isEmpty()) {
             return redirect()->route('products')->with('error', 'Keranjang Anda kosong.');
         }
 
+        // Hitung total harga
         $total = $cartItems->sum(function($item) {
             return $item->product->price * $item->quantity;
         });
@@ -27,58 +35,89 @@ class OrderController extends Controller
         return view('orders.checkout', compact('cartItems', 'total'));
     }
 
-    // 2. PROSES CHECKOUT (Ini yang kemarin belum ada isinya)
+    /**
+     * 2. PROSES CHECKOUT (Logic Utama)
+     */
     public function processCheckout(Request $request)
     {
-        // Validasi Input
+        // A. Validasi Input User
         $request->validate([
             'shipping_address' => 'required|string|max:500',
             'payment_method' => 'required|in:transfer_bank,cod,e-wallet',
         ]);
 
-        // Gunakan Transaction agar data aman (semua tersimpan atau tidak sama sekali)
-        DB::transaction(function () use ($request) {
-            $user = Auth::user();
+        $user = Auth::user();
 
-            // Ambil data keranjang user
-            $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
+        try {
+            // B. Mulai Transaksi Database
+            // Kita tampung hasil return transaction ke variabel $order untuk dipakai kirim email
+            $order = DB::transaction(function () use ($request, $user) {
 
-            // Hitung Total Ulang (untuk keamanan, jangan ambil dari request frontend)
-            $totalPrice = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+                // 1. Ambil data keranjang terbaru (untuk memastikan stok/harga valid)
+                $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
 
-            // A. Buat Record Order Baru
-            $order = Order::create([
-                'user_id' => $user->id,
-                'status' => 'pending', // Default status
-                'shipping_address' => $request->shipping_address,
-                'payment_method' => $request->payment_method,
-                'total_price' => $totalPrice,
-            ]);
+                if ($cartItems->isEmpty()) {
+                    throw new \Exception('Keranjang kosong saat diproses.');
+                }
 
-            // B. Pindahkan Item Keranjang ke OrderItems
-            foreach ($cartItems as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'quantity' => $item->quantity,
-                    'price' => $item->product->price, // Harga saat transaksi terjadi
+                // 2. Hitung Total Ulang (Keamanan: jangan percaya input harga dari frontend)
+                $totalPrice = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
+
+                // 3. Buat Record Order
+                $newOrder = Order::create([
+                    'user_id' => $user->id,
+                    'status' => 'pending',
+                    'shipping_address' => $request->shipping_address,
+                    'payment_method' => $request->payment_method,
+                    'total_price' => $totalPrice,
                 ]);
+
+                // 4. Pindahkan Item Keranjang ke Tabel OrderItem
+                foreach ($cartItems as $item) {
+                    OrderItem::create([
+                        'order_id' => $newOrder->id,
+                        'product_id' => $item->product_id,
+                        'quantity' => $item->quantity,
+                        'price' => $item->product->price, // Simpan harga saat beli (history harga)
+                    ]);
+                }
+
+                // 5. Kosongkan Keranjang
+                Cart::where('user_id', $user->id)->delete();
+
+                // Kembalikan objek order agar bisa dipakai di luar transaction
+                return $newOrder;
+            });
+
+            // --- C. PROSES KIRIM EMAIL ---
+            // Ditaruh di luar transaction agar jika email gagal, order TETAP BERHASIL disimpan.
+            try {
+                // Kirim ke email user yang sedang login
+                Mail::to($user)->send(new OrderPlaced($order));
+
+            } catch (\Exception $e) {
+                // Jika gagal kirim email, jangan crash! Cukup catat di log error.
+                // Lokasi log: storage/logs/laravel.log
+                Log::error('Gagal mengirim email order #' . $order->id . ': ' . $e->getMessage());
             }
 
-            // C. Hapus Semua Isi Keranjang User Ini
-            Cart::where('user_id', $user->id)->delete();
-        });
+            // D. Redirect Sukses
+            return redirect()->route('orders.history')
+                ->with('success', 'Pesanan berhasil dibuat! Cek email Anda untuk konfirmasi.');
 
-        // Redirect ke Halaman History dengan pesan sukses
-        return redirect()->route('orders.history')->with('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
+        } catch (\Exception $e) {
+            // Jika Error Database (Transkasi Gagal), balik ke halaman checkout dengan pesan error
+            return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+        }
     }
 
-    // 3. Tampilkan Riwayat Pesanan
+    /**
+     * 3. Tampilkan Riwayat Pesanan
+     */
     public function history()
     {
-        // Ambil order milik user yang sedang login, urutkan dari yang terbaru
         $orders = Order::where('user_id', Auth::id())
-                        ->with('items.product') // Load relasi items dan product
+                        ->with('items.product')
                         ->latest()
                         ->get();
 

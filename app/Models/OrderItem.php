@@ -16,6 +16,13 @@ class OrderItem extends Model
         'price',
     ];
 
+    // Relasi balik ke Order
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    // Relasi ke Product (Agar $item->product->name bisa jalan di email)
     public function product()
     {
         return $this->belongsTo(Product::class);

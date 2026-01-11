@@ -12,11 +12,18 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'status',
+        'total_price',
         'shipping_address',
         'payment_method',
-        'total_price',
     ];
 
+    // Relasi ke User (Agar $order->user->name bisa jalan)
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Relasi ke OrderItem (Agar foreach $order->items bisa jalan)
     public function items()
     {
         return $this->hasMany(OrderItem::class);

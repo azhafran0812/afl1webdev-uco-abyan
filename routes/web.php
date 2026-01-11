@@ -8,64 +8,74 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\WishlistController;
 
+// --- PUBLIC ROUTES (Bisa diakses siapa saja) ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Group routes berdasarkan URI /products dan Controller ProductController
-Route::prefix('products')->controller(ProductController::class)->group(function () {
-
-    // 1. Route index (/products) - Method GET
+// Melihat daftar & detail produk tidak butuh login
+Route::controller(ProductController::class)->prefix('products')->group(function () {
     Route::get('/', 'index')->name('products');
-
-    // 2. Route create (/products/create) - Method GET
-    Route::get('/create', 'create')->name('products.create');
-
-    // 3. Route store (/products/store) - Method POST
-    Route::post('/store', 'store')->name('products.store');
-
-    // 4. Route show (/products/show/{id}) - Method GET dengan parameter id
     Route::get('/show/{id}', 'show')->name('products.show');
+});
 
-    // 5. Route edit (/products/edit/{id}) - Method GET dengan parameter id
-    Route::get('/edit/{id}', 'edit')->name('products.edit');
-
-    // 6. Route update (/products/update/{id}) - Method POST dengan parameter id
-    // Catatan: Tugas meminta Method POST, meski biasanya Laravel menggunakan PUT/PATCH
-    Route::post('/update/{id}', 'update')->name('products.update');
-
-    Route::prefix('categories')->controller(CategoryController::class)->group(function () {
-    Route::get('/create', 'create')->name('categories.create'); // Halaman form
-    Route::post('/store', 'store')->name('categories.store');   // Proses simpan
-    });
-
-    // --- GUEST ROUTES (Hanya bisa diakses jika BELUM login) ---
-    Route::middleware(['guest'])->group(function () {
-    // Register (Menggunakan UserController sesuai materi Sesi 10)
+// --- GUEST ROUTES (Hanya bisa diakses jika BELUM login) ---
+Route::middleware(['guest'])->group(function () {
+    // Register
     Route::get('/register', [UserController::class, 'create'])->name('register');
     Route::post('/register', [UserController::class, 'store'])->name('register.store');
 
     // Login
     Route::get('/login', [LoginController::class, 'login'])->name('login');
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.authenticate');
-    });
+});
 
-// --- AUTH ROUTES (Hanya bisa diakses jika SUDAH login) ---
-    Route::middleware(['auth'])->group(function () {
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+// --- ADMIN ROUTES (Hanya bisa diakses oleh Admin) ---
+// Middleware 'admin' harus sudah didaftarkan di bootstrap/app.php
+Route::middleware(['auth', 'admin'])->group(function () {
 
-    // Masukkan route Cart & Checkout Anda di sini nantinya
-        // Fitur Keranjang
-    Route::prefix('cart')->controller(CartController::class)->group(function () {
-        Route::get('/', 'index')->name('cart.index');           // Lihat keranjang
-        Route::post('/add/{id}', 'addToCart')->name('cart.add'); // Tambah produk
-        Route::post('/update/{id}', 'updateCart')->name('cart.update'); // Ubah jumlah
-        Route::post('/remove/{id}', 'removeFromCart')->name('cart.remove'); // Hapus produk
-    });
+    // Manajemen Produk (Create, Edit, Update, Store)
+    Route::controller(ProductController::class)->prefix('products')->group(function () {
+        Route::get('/create', 'create')->name('products.create');
+        Route::post('/store', 'store')->name('products.store');
+        Route::get('/edit/{id}', 'edit')->name('products.edit');
+        Route::post('/update/{id}', 'update')->name('products.update');
+        Route::delete('/delete/{id}', 'destroy')->name('products.destroy');
+            });
 
-    // Fitur Checkout & Order
-    Route::get('/checkout', [OrderController::class, 'checkoutPage'])->name('checkout.page');
-    Route::post('/checkout', [OrderController::class, 'processCheckout'])->name('checkout.process');
-    Route::get('/orders', [OrderController::class, 'history'])->name('orders.history');
+    // Manajemen Kategori
+    Route::controller(CategoryController::class)->prefix('categories')->group(function () {
+        Route::get('/create', 'create')->name('categories.create');
+        Route::post('/store', 'store')->name('categories.store');
+        Route::delete('/{id}', 'destroy')->name('categories.destroy');
     });
 });
 
+// --- AUTHENTICATED USER ROUTES (Harus Login) ---
+// Berlaku untuk User Biasa maupun Admin (Admin juga butuh logout/edit profil)
+Route::middleware(['auth'])->group(function () {
+
+    // Logout
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+    // Fitur Baru: Edit Profil
+    Route::get('/profile', [UserController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [UserController::class, 'update'])->name('profile.update');
+
+    // Fitur Baru: Wishlist
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+
+    // Fitur Keranjang (Cart)
+    Route::controller(CartController::class)->prefix('cart')->group(function () {
+        Route::get('/', 'index')->name('cart.index');
+        Route::post('/add/{id}', 'addToCart')->name('cart.add');
+        Route::post('/update/{id}', 'updateCart')->name('cart.update');
+        Route::post('/remove/{id}', 'removeFromCart')->name('cart.remove');
+    });
+
+    // Fitur Checkout & Order History
+    Route::get('/checkout', [OrderController::class, 'checkoutPage'])->name('checkout.page');
+    Route::post('/checkout', [OrderController::class, 'processCheckout'])->name('checkout.process');
+    Route::get('/orders', [OrderController::class, 'history'])->name('orders.history');
+});

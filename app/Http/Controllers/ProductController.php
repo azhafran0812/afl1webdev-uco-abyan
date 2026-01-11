@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Category; // Import Model Category
+use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage; // Wajib import Storage untuk hapus/upload gambar
 
 class ProductController extends Controller
 {
@@ -13,7 +14,7 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Ambil semua kategori untuk mengisi dropdown filter di View
+        // 1. Ambil semua kategori untuk dropdown filter
         $categories = Category::all();
 
         // Mulai Query
@@ -28,7 +29,7 @@ class ProductController extends Controller
             });
         }
 
-        // 3. Fitur Filter Kategori (Baru)
+        // 3. Fitur Filter Kategori
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
@@ -50,10 +51,9 @@ class ProductController extends Controller
             $query->orderBy($sort, $direction);
         }
 
-        // Pagination & Query String (agar filter tidak hilang saat pindah halaman)
+        // Pagination
         $products = $query->paginate(30)->withQueryString();
 
-        // Kirim data produk DAN data kategori ke view
         return view('products.list', compact('products', 'categories'));
     }
 
@@ -62,24 +62,32 @@ class ProductController extends Controller
      */
     public function create()
     {
-        // Ambil semua kategori untuk dropdown di form
+        // Ambil kategori untuk dropdown pilihan di form
         $categories = Category::all();
-
         return view('products.form', compact('categories'));
     }
 
     /**
-     * Menyimpan data produk baru.
+     * Menyimpan data produk baru beserta gambar.
      */
     public function store(Request $request)
     {
-        // Validasi input
+        // Validasi
         $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id', // Wajib valid
+            'category_id' => 'required|exists:categories,id',
             'name'        => 'required|string|max:255',
             'description' => 'required|string',
             'price'       => 'required|numeric|min:0',
+            // Validasi gambar (opsional, max 2MB, format jpg/png/dll)
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        // Logika Upload Gambar
+        if ($request->hasFile('image')) {
+            // Simpan ke folder 'products' di disk 'public'
+            $imagePath = $request->file('image')->store('products', 'public');
+            $validated['image'] = $imagePath;
+        }
 
         Product::create($validated);
 
@@ -101,15 +109,13 @@ class ProductController extends Controller
     public function edit($id)
     {
         $product = Product::findOrFail($id);
-
-        // Ambil kategori untuk dropdown edit (agar bisa ganti kategori)
-        $categories = Category::all();
+        $categories = Category::all(); // Untuk dropdown kategori saat edit
 
         return view('products.form', compact('product', 'categories'));
     }
 
     /**
-     * Mengupdate data produk.
+     * Mengupdate data produk dan gambar.
      */
     public function update(Request $request, $id)
     {
@@ -120,19 +126,38 @@ class ProductController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'required|string',
             'price'       => 'required|numeric|min:0',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        // Cek jika ada gambar baru yang diupload
+        if ($request->hasFile('image')) {
+            // 1. Hapus gambar lama jika ada
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
+                Storage::disk('public')->delete($product->image);
+            }
+
+            // 2. Simpan gambar baru
+            $imagePath = $request->file('image')->store('products', 'public');
+            $validated['image'] = $imagePath;
+        }
 
         $product->update($validated);
 
-        return redirect()->route('products')->with('success', 'Produk ID ' . $id . ' berhasil diupdate!');
+        return redirect()->route('products')->with('success', 'Produk berhasil diperbarui!');
     }
 
     /**
-     * Menghapus produk.
+     * Menghapus produk beserta gambarnya.
      */
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
+
+        // Hapus file gambar dari storage jika ada
+        if ($product->image && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
+        }
+
         $product->delete();
 
         return redirect()->route('products')->with('success', 'Produk berhasil dihapus!');

@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* --- TAMBAHKAN BARIS INI --- */
+/* Memaksa Tailwind menggunakan class .dark untuk dark mode, bukan settingan laptop/HP */
+@variant dark (&:where(.dark, .dark *));
+
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';

@@ -9,7 +9,14 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['category_id', 'name', 'description', 'price'];
+    // Tambahkan 'image' ke dalam array ini
+    protected $fillable = [
+        'category_id',
+        'name',
+        'description',
+        'price',
+        'image'
+    ];
 
     public function category()
     {
