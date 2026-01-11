@@ -105,7 +105,9 @@
                             @foreach($cartItems as $item)
                             <li class="flex py-4">
                                 <div class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
-                                    <img src="https://source.unsplash.com/random/100x100?sig={{ $item->product->id }}" alt="{{ $item->product->name }}" class="h-full w-full object-cover object-center">
+                                    <img src="{{ asset('storage/' . $item->product->image) }}"
+                                        alt="{{ $item->product->name }}"
+                                        class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700">
                                 </div>
 
                                 <div class="ml-4 flex flex-1 flex-col">

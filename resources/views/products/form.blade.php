@@ -88,6 +88,20 @@
                     @enderror
                 </div>
 
+                {{-- Input Stok (FITUR BARU) --}}
+                <div>
+                    <label for="stock" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
+                        Stok Produk <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="stock" id="stock"
+                           class="block w-full rounded-lg border-gray-300 dark:border-gray-600 shadow-sm focus:border-black focus:ring-black sm:text-sm py-2.5 px-3 dark:bg-gray-700 dark:text-white transition"
+                           placeholder="0"
+                           value="{{ old('stock', isset($product) ? $product->stock : 0) }}" required min="0">
+                    @error('stock')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 {{-- Input Deskripsi --}}
                 <div>
                     <label for="description" class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">

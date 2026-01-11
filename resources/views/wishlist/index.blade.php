@@ -18,7 +18,9 @@
                     {{-- Gambar --}}
                     <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden bg-gray-200 dark:bg-gray-700 lg:aspect-none group-hover:opacity-75 lg:h-64">
                          {{-- Ganti src dengan path gambar produk Anda --}}
-                        <img src="https://placehold.co/400" alt="{{ $item->product->name }}" class="h-full w-full object-cover object-center lg:h-full lg:w-full">
+                        <img src="{{ asset('storage/' . $item->product->image) }}"
+                            alt="{{ $item->product->name }}"
+                            class="h-full w-full object-cover object-center group-hover:opacity-75">
                     </div>
 
                     <div class="p-4">

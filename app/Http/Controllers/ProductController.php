@@ -78,6 +78,7 @@ class ProductController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'required|string',
             'price'       => 'required|numeric|min:0',
+            'stock'       => 'required|integer|min:0',
             // Validasi gambar (opsional, max 2MB, format jpg/png/dll)
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -126,6 +127,7 @@ class ProductController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'required|string',
             'price'       => 'required|numeric|min:0',
+            'stock'       => 'required|integer|min:0',
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 

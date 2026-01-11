@@ -50,6 +50,14 @@
                            class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors {{ request()->routeIs('products*') ? 'border-black dark:border-white text-gray-900 dark:text-white' : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 hover:text-gray-700 dark:hover:text-gray-200' }}">
                             Produk
                         </a>
+                        {{-- MENU ADMIN (Hanya muncul jika Role = Admin) --}}
+                            @auth
+                                @if(Auth::user()->role === 'admin')
+                                    <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-bold leading-5 text-red-600 hover:text-red-800 hover:border-red-600 transition duration-150 ease-in-out {{ request()->routeIs('admin*') ? 'border-red-600 text-red-800' : '' }}">
+                                        Admin Panel
+                                    </a>
+                                @endif
+                            @endauth
                     </div>
                 </div>
 
@@ -209,11 +217,25 @@
     </main>
 
     <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto transition-colors duration-300">
-        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
-            <div class="mt-8 md:mt-0 md:order-1 w-full">
-                <p class="text-center text-base text-gray-400 dark:text-gray-500">
-                    &copy; {{ date('Y') }} Toko Aplikasi Laravel. All rights reserved.
-                </p>
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <div class="md:flex md:items-center md:justify-between">
+                <div class="flex space-x-6 md:order-2">
+                    <a href="{{ route('about') }}" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        Tentang Kami
+                    </a>
+                    <a href="{{ route('faq') }}" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        FAQ
+                    </a>
+                    <span class="text-gray-400">|</span>
+                    <a href="#" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
+                        Instagram
+                    </a>
+                </div>
+                <div class="mt-8 md:mt-0 md:order-1">
+                    <p class="text-center text-base text-gray-400 dark:text-gray-500">
+                        &copy; {{ date('Y') }} TaleSpindle Studio. All rights reserved.
+                    </p>
+                </div>
             </div>
         </div>
     </footer>

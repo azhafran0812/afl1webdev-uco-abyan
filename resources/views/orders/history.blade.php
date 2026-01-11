@@ -63,8 +63,9 @@
                             <li class="py-3 flex justify-between items-center">
                                 <div class="flex items-center gap-3">
                                     <div class="h-10 w-10 bg-gray-100 rounded-lg overflow-hidden">
-                                        {{-- Gambar Placeholder --}}
-                                        <img src="https://source.unsplash.com/random/100x100?sig={{ $item->product_id }}" class="h-full w-full object-cover">
+                                        <img src="{{ asset('storage/' . $item->product->image) }}"
+                                            alt="{{ $item->product->name }}"
+                                            class="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700">
                                     </div>
                                     <div>
                                         <p class="text-sm font-bold text-gray-900">{{ $item->product->name }}</p>

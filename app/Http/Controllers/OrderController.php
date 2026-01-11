@@ -60,6 +60,13 @@ class OrderController extends Controller
                     throw new \Exception('Keranjang kosong saat diproses.');
                 }
 
+                // --- VALIDASI STOK (BARU) ---
+                foreach ($cartItems as $item) {
+                    if ($item->quantity > $item->product->stock) {
+                        throw new \Exception("Stok produk '{$item->product->name}' tidak mencukupi (Sisa: {$item->product->stock}).");
+                    }
+                }
+
                 // 2. Hitung Total Ulang (Keamanan: jangan percaya input harga dari frontend)
                 $totalPrice = $cartItems->sum(fn($item) => $item->product->price * $item->quantity);
 
@@ -80,7 +87,9 @@ class OrderController extends Controller
                         'quantity' => $item->quantity,
                         'price' => $item->product->price, // Simpan harga saat beli (history harga)
                     ]);
+                    $item->product->decrement('stock', $item->quantity);
                 }
+
 
                 // 5. Kosongkan Keranjang
                 Cart::where('user_id', $user->id)->delete();

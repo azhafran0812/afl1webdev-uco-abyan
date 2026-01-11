@@ -56,6 +56,27 @@
                     <p><strong>Status:</strong> <span style="color: #e67e22; font-weight:bold;">{{ ucfirst($order->status) }}</span></p>
                 </div>
 
+                {{-- Tampilkan Instruksi Pembayaran (FITUR BARU) --}}
+                <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0;">Instruksi Pembayaran</h3>
+                    <p>Silakan selesaikan pembayaran Anda melalui:</p>
+
+                    @if($order->payment_method == 'transfer_bank')
+                        <p><strong>Bank BCA</strong><br>
+                        No. Rekening: <strong>5855161360</strong><br>
+                        Atas Nama: <strong>Abyan Zhafran</strong></p>
+                    @elseif($order->payment_method == 'e-wallet')
+                        <p><strong>GoPay / OVO / Dana</strong><br>
+                        Nomor: <strong>0818-0998-3956</strong><br>
+                        Atas Nama: <strong>Abyan Zhafran</strong></p>
+                    @else
+                        <p><strong>Cash on Delivery (COD)</strong><br>
+                        Silakan siapkan uang tunai sejumlah total tagihan saat kurir tiba.</p>
+                    @endif
+
+                    <p><em>*Harap lakukan pembayaran dalam 1x24 jam.</em></p>
+                </div>
+
                 {{-- Tabel Produk --}}
                 <div class="table-container">
                     <table cellpadding="0" cellspacing="0">

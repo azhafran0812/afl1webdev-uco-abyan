@@ -25,7 +25,9 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="h-10 w-10 flex-shrink-0 bg-gray-100 rounded-md overflow-hidden">
-                                     <img class="h-10 w-10 object-cover" src="https://source.unsplash.com/random/100x100?sig={{ $item->product->id }}" alt="">
+                                     <img class="h-10 w-10 object-cover" src="{{ asset('storage/' . $item->product->image) }}"
+                                        alt="{{ $item->product->name }}"
+                                        class="h-24 w-24 object-cover rounded-md border border-gray-200 dark:border-gray-700">
                                 </div>
                                 <div class="ml-4">
                                     <div class="text-sm font-medium text-gray-900">{{ $item->product->name }}</div>
